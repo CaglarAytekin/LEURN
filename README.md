@@ -8,8 +8,9 @@ A demo is provided for training, making local explanations and data generation i
 Main difference of this implementation from the paper:
 - LEURN is now much simpler and uses binarized tanh (k=1 always) with no degradation in performance.
 
-Notes
-For top performance, a thorough hyperparameter search as described in paper is needed.
+Notes: 
+- For top performance, a thorough hyperparameter search as described in paper is needed.
+- Deepcause provides consultancy services to make the most out of LEURN
 
 Contact:
 caglar@deepcause.ai
