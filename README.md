@@ -2,7 +2,7 @@
 Official Repository for LEURN: Learning Explainable Univariate Rules with Neural Networks
 https://arxiv.org/abs/2303.14937
 
-Detailed information about LEURN is given in the presentations,
+Detailed information about LEURN is given in the presentations.
 A demo is provided for training, making local explanations and data generation in DEMO.py
 
 Main difference of this implementation from the paper:
@@ -10,6 +10,7 @@ Main difference of this implementation from the paper:
 
 Notes: 
 - For top performance, a thorough hyperparameter search as described in paper is needed.
+- Human-in-the-loop continuous training is not implemented in this repository.
 - Deepcause provides consultancy services to make the most out of LEURN
 
 Contact:
