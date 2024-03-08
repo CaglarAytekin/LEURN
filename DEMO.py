@@ -47,6 +47,7 @@ model = LEURN(preprocessor, depth=depth,droprate=droprate).to(device)
 #%%Train model
 model_trainer=Trainer(model, X_train, X_val, y_train, y_val,lr=lr,batch_size=batch_size,epochs=epochs,problem_type=output_type)
 model_trainer.train()
+model=model_trainer.model
 
 #%%Evaluate performance
 perf=model_trainer.evaluate(X_train, y_train)

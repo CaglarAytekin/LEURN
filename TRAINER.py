@@ -168,3 +168,5 @@ class Trainer:
                 test_acc=0
                 print('MSE: ', test_loss /len(test_loader))
                 return test_loss /len(test_loader)
+            
+   
