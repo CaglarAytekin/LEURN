@@ -8,6 +8,9 @@ A demo is provided for training, making local explanations and data generation i
 NEW! Streamlit demo is now available
 Just activate the environment and run the following in your command line.
 streamlit run UI.py
+Make sure you check the explanation video at:
+https://www.linkedin.com/posts/caglaraytekin_ai-machinelearning-dataanalysis-activity-7172866316691869697-5-nB?utm_source=share&utm_medium=member_desktop
+
 
 
 Main difference of this implementation from the paper:

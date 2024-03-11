@@ -15,7 +15,7 @@ import openml
 #DEMO FOR CREDIT SCORING DATASET: OPENML ID : 31
 #MORE INFO: https://www.openml.org/search?type=data&sort=runs&id=31&status=active
 #%% Set Neural Network Hyperparameters
-depth=3
+depth=2
 batch_size=1024
 lr=1e-3
 epochs=500
