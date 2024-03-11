@@ -5,6 +5,11 @@ https://arxiv.org/abs/2303.14937
 Detailed information about LEURN is given in the presentations.
 A demo is provided for training, making local explanations and data generation in DEMO.py
 
+NEW! Streamlit demo is now available
+Just activate the environment and run the following in your command line.
+streamlit run UI.py
+
+
 Main difference of this implementation from the paper:
 - LEURN is now much simpler and uses binarized tanh (k=1 always) with no degradation in performance.
 

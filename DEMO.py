@@ -17,8 +17,8 @@ import openml
 #%% Set Neural Network Hyperparameters
 depth=3
 batch_size=1024
-lr=5e-3
-epochs=300
+lr=1e-3
+epochs=500
 droprate=0.0
 output_type=1 #0: regression, 1: binary classification, 2: multi-class classification
 
@@ -47,7 +47,8 @@ model = LEURN(preprocessor, depth=depth,droprate=droprate).to(device)
 #%%Train model
 model_trainer=Trainer(model, X_train, X_val, y_train, y_val,lr=lr,batch_size=batch_size,epochs=epochs,problem_type=output_type)
 model_trainer.train()
-model=model_trainer.model
+#Load best weights
+model.load_state_dict(torch.load('best_model_weights.pth'))
 
 #%%Evaluate performance
 perf=model_trainer.evaluate(X_train, y_train)

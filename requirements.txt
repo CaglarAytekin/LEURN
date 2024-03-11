@@ -3,3 +3,4 @@ pandas
 openml
 numpy
 scikit-learn
+streamlit==1.29.0

@@ -10,10 +10,11 @@ from sklearn.metrics import roc_auc_score
 from torch.optim.lr_scheduler import StepLR
 import numpy as np 
 class Trainer:
-    def __init__(self, model, X_train, X_val, y_train, y_val,lr,batch_size,epochs,problem_type):
+    def __init__(self, model, X_train, X_val, y_train, y_val,lr,batch_size,epochs,problem_type,verbose=True):
         self.model = model
         self.optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         self.problem_type=problem_type
+        self.verbose=verbose
         if self.problem_type==0:
             self.criterion = nn.MSELoss()
         elif self.problem_type==1:
@@ -94,48 +95,54 @@ class Trainer:
             val_loss, val_acc , val_roc_auc= self.validate()
             
             if self.problem_type == 0:
-                print(f'Epoch {epoch}: Train Loss {tr_loss:.4f}, Val Loss {val_loss:.4f}')
+                if self.verbose:
+                    print(f'Epoch {epoch}: Train Loss {tr_loss:.4f}, Val Loss {val_loss:.4f}')
                 if (val_loss < self.best_metric)and(save_permit):
                     self.best_metric = val_loss
                     # Save model checkpoint
                     self.model.nninput=None #Delete data remaining from training 
                     self.encodings=None
                     self.taus=None
-                    torch.save(self.model, 'best_model.pth')
+                    # torch.save(self.model, 'best_model.pth')
+                    torch.save(self.model.state_dict(), 'best_model_weights.pth')
                     # print("Saving model with best validation loss.")
             
             # Problem type 1: Focus on loss, accuracy, and AUC
             elif self.problem_type == 1:
-                print(f'Epoch {epoch}: Train Loss {tr_loss:.4f}, Train Acc {tr_acc:.4f}, Val Loss {val_loss:.4f}, Val Acc {val_acc:.4f}, Val ROC AUC {val_roc_auc:.4f}')
+                if self.verbose:
+                    print(f'Epoch {epoch}: Train Loss {tr_loss:.4f}, Train Acc {tr_acc:.4f}, Val Loss {val_loss:.4f}, Val Acc {val_acc:.4f}, Val ROC AUC {val_roc_auc:.4f}')
                 if (val_roc_auc > self.best_metric)and(save_permit):
                     self.best_metric = val_roc_auc
                     # Save model checkpoint
                     self.model.nninput=None #Delete data remaining from training 
                     self.encodings=None
                     self.taus=None
-                    torch.save(self.model, 'best_model.pth')
+                    # torch.save(self.model, 'best_model.pth')
+                    torch.save(self.model.state_dict(), 'best_model_weights.pth')
                     # print("Saving model with best validation ROC AUC.")
             
             # Problem type 2: Focus on loss and accuracy
             elif self.problem_type == 2:
-                print(f'Epoch {epoch}: Train Loss {tr_loss:.4f}, Train Acc {tr_acc:.4f}, Val Loss {val_loss:.4f}, Val Acc {val_acc:.4f}')
+                if self.verbose:
+                    print(f'Epoch {epoch}: Train Loss {tr_loss:.4f}, Train Acc {tr_acc:.4f}, Val Loss {val_loss:.4f}, Val Acc {val_acc:.4f}')
                 if (val_acc > self.best_metric)and(save_permit):
                     self.best_metric = val_acc
                     # Save model checkpoint
                     self.model.nninput=None #Delete data remaining from training 
                     self.encodings=None
                     self.taus=None
-                    torch.save(self.model, 'best_model.pth')
+                    # torch.save(self.model, 'best_model.pth')
+                    torch.save(self.model.state_dict(), 'best_model_weights.pth')
                     # print("Saving model with best validation accuracy.")
             self.scheduler.step()
         # Load best validation model
-        # self.model.load_state_dict(torch.load('best_model.pth'))
+        self.model.load_state_dict(torch.load('best_model_weights.pth'))
 
-        self.model = torch.load('best_model.pth')
+        # self.model = torch.load('best_model.pth')
 
         
         
-    def evaluate(self,X_test, y_test):
+    def evaluate(self,X_test, y_test,verbose=True):
         test_loader=DataLoader(dataset=TensorDataset(X_test, y_test), batch_size=len(y_test), shuffle=True)
         self.model.eval()
         test_loss = 0
@@ -156,17 +163,20 @@ class Trainer:
             if self.problem_type==1:
                 test_roc_auc =roc_auc_score(test_targets, test_predictions)
                 test_acc = accuracy(test_targets, np.round(test_predictions))
-                print('ROC-AUC: ', test_roc_auc)
+                if verbose:
+                    print('ROC-AUC: ', test_roc_auc)
                 return test_roc_auc
             elif self.problem_type==2:
                 test_acc = accuracy(test_targets,test_predictions)
                 test_roc_auc=0
-                print('ACC: ', test_acc)
+                if verbose:
+                    print('ACC: ', test_acc)
                 return test_acc
             else:
                 test_roc_auc=0
                 test_acc=0
-                print('MSE: ', test_loss /len(test_loader))
+                if verbose:
+                    print('MSE: ', test_loss /len(test_loader))
                 return test_loss /len(test_loader)
             
    

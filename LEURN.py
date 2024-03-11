@@ -7,6 +7,7 @@ import torch.nn as nn
 import random 
 import numpy as np 
 import pandas as pd
+import copy
 class CustomEncodingFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x, tau,alpha):
@@ -238,15 +239,14 @@ class LEURN(nn.Module):
     
         return categories_within_bounds
     
-    def explain(self,x,generate=0):
+    def explain(self,x):
         """
         Explains decisions of the neural network for input sample.
         For numericals, extracts upper and lower boundaries on the sample
         For categoricals displays possible categories
         Also calculates contributions of each feature to final result
         """
-        if generate==0:
-            self.find_boundaries(x) #find upper, lower boundaries for all nn inputs
+        self.find_boundaries(x) #find upper, lower boundaries for all nn inputs
         
         #find valid categories for categorical features
         valid_categories=self.categories_within_boundaries()
@@ -487,13 +487,19 @@ class LEURN(nn.Module):
         
         self.encodings=encodings
         self.taus=taus
-        self.upper_boundaries=max_bound
-        self.lower_boundaries=min_bound
-        self.explain(x=None,generate=1)
-        new_sample=self.sample_from_boundaries()
-        new_sample_original_format=self.preprocessor.inverse_transform_X(new_sample)
+        self.upper_boundaries=torch.clone(max_bound)
+        self.lower_boundaries=torch.clone(min_bound)
+        
+        generated_sample=self.sample_from_boundaries()
+        ##Check if manually found and network generated boundaries are same
+        # if torch.equal(self.upper_boundaries,max_bound) and torch.equal(self.lower_boundaries,min_bound):
+        #     print(True)
+        
+        self.explain(generated_sample)
+        generated_sample_original_format=self.preprocessor.inverse_transform_X(generated_sample)
         result=self.preprocessor.inverse_transform_y(self.output)
-        return new_sample,new_sample_original_format,result
+        
+        return generated_sample,generated_sample_original_format,result
     
     def generate_from_same_category(self,x):
         self.explain(x)
