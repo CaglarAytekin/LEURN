@@ -18,7 +18,7 @@ import openml
 depth=2
 batch_size=1024
 lr=1e-3
-epochs=500
+epochs=5
 droprate=0.0
 output_type=1 #0: regression, 1: binary classification, 2: multi-class classification
 

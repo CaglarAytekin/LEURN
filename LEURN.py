@@ -239,7 +239,7 @@ class LEURN(nn.Module):
     
         return categories_within_bounds
     
-    def explain(self,x):
+    def explain_without_causal_effects(self,x):
         """
         Explains decisions of the neural network for input sample.
         For numericals, extracts upper and lower boundaries on the sample
@@ -350,6 +350,8 @@ class LEURN(nn.Module):
             attribute_names_list.append(attr_name)
             revised_explanations_list.append(revised_explanation)
             contributions_list.append(Contribution[idx] if idx < len(Contribution) else None)
+            
+            
 
         # Construct DataFrame
         Explanation_df = pd.DataFrame({
@@ -364,9 +366,111 @@ class LEURN(nn.Module):
         result=self.preprocessor.inverse_transform_y(self.output)
         # Explanation_df['Result'] = [result] * len(Explanation_df)
 
-        return Explanation_df,self.output,result
+        return copy.deepcopy(Explanation_df),self.output.clone(),copy.deepcopy(result),copy.deepcopy(Explanation)
+    
+    def explain(self,x,include_causal_analysis=False):
+        """
+        Fixes all features but one, sweeps that feature across its own categories, reports the average change from other categories to current one.
+        """
+        
+        def update_intervals(available_intervals, incoming_interval):
+            updated_intervals = []
+            for interval in available_intervals:
+                if incoming_interval[1] <= interval[0] or incoming_interval[0] >= interval[1]:
+                    # The incoming interval does not overlap, keep the interval as is
+                    updated_intervals.append(interval)
+                else:
+                    # There is some overlap, possibly split the interval
+                    if incoming_interval[0] > interval[0]:
+                        # Add the left part that doesn't overlap
+                        updated_intervals.append((interval[0], incoming_interval[0]))
+                    if incoming_interval[1] < interval[1]:
+                        # Add the right part that doesn't overlap
+                        updated_intervals.append((incoming_interval[1], interval[1]))
+            return updated_intervals
+        
+        def sample_from_intervals(available_intervals):
+            if not available_intervals:
+                return None
+            # Choose a random interval
+            chosen_interval = random.choice(available_intervals)
+            # Sample a random point within this interval
+            return random.uniform(chosen_interval[0], chosen_interval[1])
+        
+    
+                
+        
+        Explanation_df,output,result,Explanation=self.explain_without_causal_effects(x)
+        if include_causal_analysis:
+            # Causal analysis
+            causal_effect=np.zeros((x.shape[-1],))
+            numerical_cnt=0
+            for idx, attr_name in enumerate(self.attribute_names):
+                if isinstance(Explanation[idx], list):  # Categorical
+                    all_category_names = [value for key, value in self.label_encoders[attr_name].items()]
+                    sweeped_category_names = [value for key, value in self.label_encoders[attr_name].items() if value in Explanation[idx]]
+                    
+                    if list(set(all_category_names)-set(sweeped_category_names)) == []:
+                        is_category_empty=True
+                    else:
+                        is_category_empty=False
+                        
+                    cnt=0
+                    while is_category_empty==False:
+                        new_x=x.clone()
+                        next_category=list(set(all_category_names)-set(sweeped_category_names))[0]
+                        new_x[0,idx]=float(next_category)
+                        Explanation_df_new,output_new,result_new,Explanation_new=self.explain_without_causal_effects(new_x)
+                        sweeped_category_names = sweeped_category_names+[value for key, value in self.label_encoders[attr_name].items() if value in Explanation_new[idx]]
+    
+                        if list(set(all_category_names)-set(sweeped_category_names)) == []:
+                            is_category_empty=True
+                        else:
+                            is_category_empty=False
+    
+                        causal_effect[idx]=causal_effect[idx]+(output-output_new).detach().numpy()[0,0]
+                        cnt=cnt+1
+                    if cnt>0:
+                        causal_effect[idx]=causal_effect[idx]/cnt
+                    
+                else:
+    
+                    search_complete=False
+                    # Initial available interval . we know -100,100 from initial setting up lower, upper bounds
+                    available_intervals = [(-100, 100)]
+                    
+                    # Example incoming intervals
+                    #numerical boundaries
+                    self.explain_without_causal_effects(x)
+                    upper_numerical=self.upper_boundaries[sum(self.embedding_sizes):].detach().numpy()
+                    lower_numerical=self.lower_boundaries[sum(self.embedding_sizes):].detach().numpy()    
+                    incoming_interval = (lower_numerical[numerical_cnt],upper_numerical[numerical_cnt])
+                    available_intervals = update_intervals(available_intervals, incoming_interval)
+                    cnt=0
+                    while not(search_complete):
+                        new_sample=sample_from_intervals(available_intervals)
+                        new_x=x.clone()
+                        new_x[0,idx]=new_sample
+                        Explanation_df_new,output_new,result_new,Explanation_new=self.explain_without_causal_effects(new_x)
+                        causal_effect[idx]=causal_effect[idx]+(output-output_new).detach().numpy()[0,0]
+                        cnt=cnt+1
+                        upper_numerical=self.upper_boundaries[sum(self.embedding_sizes):].detach().numpy()
+                        lower_numerical=self.lower_boundaries[sum(self.embedding_sizes):].detach().numpy()    
+                        incoming_interval = (lower_numerical[numerical_cnt],upper_numerical[numerical_cnt])
+                        available_intervals = update_intervals(available_intervals, incoming_interval)
+                        if available_intervals == []:
+                            search_complete=True
+                    if cnt>0:
+                        causal_effect[idx]=causal_effect[idx]/cnt
+                    numerical_cnt=numerical_cnt+1
     
     
+    
+            Explanation_df['Causal Effects'] = causal_effect
+        return Explanation_df,output,result
+    
+
+        
     def sample_from_boundaries(self):
         """
         Assumes higher and lower boundaries are already extracted (eg self.explain is run on one input already)
@@ -495,14 +599,14 @@ class LEURN(nn.Module):
         # if torch.equal(self.upper_boundaries,max_bound) and torch.equal(self.lower_boundaries,min_bound):
         #     print(True)
         
-        self.explain(generated_sample)
+        self.explain_without_causal_effects(generated_sample)
         generated_sample_original_format=self.preprocessor.inverse_transform_X(generated_sample)
         result=self.preprocessor.inverse_transform_y(self.output)
         
         return generated_sample,generated_sample_original_format,result
     
     def generate_from_same_category(self,x):
-        self.explain(x)
+        self.explain_without_causal_effects(x)
         generated_sample=self.sample_from_boundaries()
         generated_sample_original_format=self.preprocessor.inverse_transform_X(generated_sample)
         result=self.preprocessor.inverse_transform_y(self.output)

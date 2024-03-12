@@ -129,8 +129,8 @@ if st.session_state['training_completed'] == True:
         
         #Explain selected row
         if st.button("Explain"):
-            model=st.session_state.model
-            Exp_df_test_sample,result,result_original_format=model.explain(torch.from_numpy(model.preprocessor.transform_X(st.session_state['selected_row']).values.astype('float32')))
+            model=st.session_state['model']
+            Exp_df_test_sample,result,result_original_format=model.explain(torch.from_numpy(model.preprocessor.transform_X(st.session_state['selected_row']).values.astype('float32')),include_causal_analysis=True)
             st.session_state['explanation_made']=True
             st.session_state['Exp_df_test_sample']=Exp_df_test_sample
             st.session_state['result_original_format']=result_original_format
@@ -154,9 +154,9 @@ if st.session_state['training_completed'] == True:
     #Data generation part
     st.subheader("Generate Data From Scratch")
     if st.button("Generate"):
-        model=st.session_state.model
+        model=st.session_state['model']
         generated_sample_nn_friendly, generated_sample_original_input_format,output=model.generate()
-        Exp_df_generated_sample,result,result_original_format=model.explain(generated_sample_nn_friendly)
+        Exp_df_generated_sample,result,result_original_format=model.explain(generated_sample_nn_friendly,include_causal_analysis=True)
         st.write("Explanation DataFrame:")
         st.write(Exp_df_generated_sample)
         st.write("Predicted Output: (Network format)")
