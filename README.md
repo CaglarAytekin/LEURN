@@ -11,7 +11,9 @@ streamlit run UI.py
 Make sure you check the explanation video at:
 https://www.linkedin.com/posts/caglaraytekin_ai-machinelearning-dataanalysis-activity-7172866316691869697-5-nB?utm_source=share&utm_medium=member_desktop
 
-
+NEW! LEURN now includes Causal Effects
+Thanks to its unique design, LEURN can make controlled experiments at lightning speed, discovering average causal effects.
+![plot](./Causality_Example.png)
 
 Main difference of this implementation from the paper:
 - LEURN is now much simpler and uses binarized tanh (k=1 always) with no degradation in performance.
