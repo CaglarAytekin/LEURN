@@ -118,17 +118,14 @@ class DataProcessor:
         return X_transformed.astype(float)
     
     def transform_X(self, X):
+        X.iloc[:, np.array(self.categoricals)] = X.iloc[:, np.array(self.categoricals)].astype(str)
         X_transformed = X.copy()
-        X_transformed.iloc[:, np.array(self.categoricals)] = X_transformed.iloc[:, np.array(self.categoricals)].astype(str)
         for i, is_categorical in enumerate(self.categoricals):
             if is_categorical:
                 encoder = self.label_encoders[i]
                 # Transform categories, replace unseen with most common category
                 X_transformed.iloc[:, i] = X.iloc[:, i].map(lambda x: x if x in encoder.classes_ else self.most_common_categories[i])
-                try:
-                    X_transformed.iloc[:, i] = encoder.transform(X_transformed.iloc[:, i])
-                except:
-                    1
+                X_transformed.iloc[:, i] = encoder.transform(X_transformed.iloc[:, i])
             else:
                 X_transformed.iloc[:, i] = X.iloc[:, i].fillna(X.iloc[:, i].mean())
                 
